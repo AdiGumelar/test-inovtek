@@ -1,114 +1,153 @@
 <script setup>
-import { computed, onMounted, ref } from 'vue'
-import MainLayout from '../layouts/MainLayout.vue'
+import { computed, onMounted, ref } from "vue";
+import MainLayout from "../layouts/MainLayout.vue";
 
-const storageKey = 'recruitment_jobs'
+const storageKey = "recruitment_jobs";
 
 const dummyJobs = [
   {
     id: 1,
-    title: 'Frontend Developer',
-    department: 'Engineering',
-    location: 'Jakarta',
-    status: 'Open',
+    title: "Frontend Developer",
+    department: "Engineering",
+    location: "Jakarta",
+    status: "Open",
   },
   {
     id: 2,
-    title: 'HR Generalist',
-    department: 'People',
-    location: 'Bandung',
-    status: 'Closed',
+    title: "HR Generalist",
+    department: "People",
+    location: "Bandung",
+    status: "Closed",
   },
   {
     id: 3,
-    title: 'UI Designer',
-    department: 'Product',
-    location: 'Remote',
-    status: 'Open',
+    title: "UI Designer",
+    department: "Product",
+    location: "Remote",
+    status: "Open",
   },
-]
+];
 
-const jobs = ref([])
-const searchKeyword = ref('')
-const selectedStatus = ref('All')
-const closeModalButton = ref(null)
+const jobs = ref([]);
+const searchKeyword = ref("");
+const selectedStatus = ref("All");
+const closeModalButton = ref(null);
+const editingJobId = ref(null);
 const form = ref({
-  title: '',
-  department: '',
-  location: '',
-  status: 'Open',
-})
+  title: "",
+  department: "",
+  location: "",
+  status: "Open",
+});
+
+const modalTitle = computed(() => {
+  return editingJobId.value ? "Edit Job" : "Add New Job";
+});
 
 const filteredJobs = computed(() => {
-  const keyword = searchKeyword.value.toLowerCase()
+  const keyword = searchKeyword.value.toLowerCase();
 
   return jobs.value.filter((job) => {
-    const matchesTitle = job.title.toLowerCase().includes(keyword)
-    const matchesStatus = selectedStatus.value === 'All' || job.status === selectedStatus.value
+    const matchesTitle = job.title.toLowerCase().includes(keyword);
+    const matchesStatus = selectedStatus.value === "All" || job.status === selectedStatus.value;
 
-    return matchesTitle && matchesStatus
-  })
-})
+    return matchesTitle && matchesStatus;
+  });
+});
 
 const getStatusBadgeClass = (status) => {
-  return status === 'Open' ? 'text-bg-success' : 'text-bg-secondary'
-}
+  return status === "Open" ? "text-bg-success" : "text-bg-secondary";
+};
 
 const normalizeJobs = (jobList) => {
   return jobList.map((job) => ({
     ...job,
-    status: job.status === 'Open' ? 'Open' : 'Closed',
-  }))
-}
+    status: job.status === "Open" ? "Open" : "Closed",
+  }));
+};
 
 const saveJobs = () => {
-  localStorage.setItem(storageKey, JSON.stringify(jobs.value))
-}
+  localStorage.setItem(storageKey, JSON.stringify(jobs.value));
+};
 
 const resetForm = () => {
+  editingJobId.value = null;
   form.value = {
-    title: '',
-    department: '',
-    location: '',
-    status: 'Open',
-  }
-}
+    title: "",
+    department: "",
+    location: "",
+    status: "Open",
+  };
+};
 
 const closeModal = () => {
-  closeModalButton.value?.click()
-}
+  closeModalButton.value?.click();
+};
 
-const handleAddJob = () => {
+const openAddJob = () => {
+  resetForm();
+};
+
+const openEditJob = (job) => {
+  editingJobId.value = job.id;
+  form.value = {
+    title: job.title,
+    department: job.department,
+    location: job.location,
+    status: job.status,
+  };
+};
+
+const handleSubmitJob = () => {
+  if (editingJobId.value) {
+    const jobIndex = jobs.value.findIndex((job) => job.id === editingJobId.value);
+
+    if (jobIndex !== -1) {
+      jobs.value[jobIndex] = {
+        id: editingJobId.value,
+        title: form.value.title,
+        department: form.value.department,
+        location: form.value.location,
+        status: form.value.status,
+      };
+    }
+
+    saveJobs();
+    resetForm();
+    closeModal();
+    return;
+  }
+
   const newJob = {
     id: Date.now(),
     title: form.value.title,
     department: form.value.department,
     location: form.value.location,
     status: form.value.status,
-  }
+  };
 
-  jobs.value.push(newJob)
-  saveJobs()
-  resetForm()
-  closeModal()
-}
+  jobs.value.push(newJob);
+  saveJobs();
+  resetForm();
+  closeModal();
+};
 
 const loadJobs = () => {
-  const savedJobs = localStorage.getItem(storageKey)
+  const savedJobs = localStorage.getItem(storageKey);
 
   if (!savedJobs) {
-    localStorage.setItem(storageKey, JSON.stringify(dummyJobs))
-    jobs.value = dummyJobs
-    return
+    localStorage.setItem(storageKey, JSON.stringify(dummyJobs));
+    jobs.value = dummyJobs;
+    return;
   }
 
-  jobs.value = normalizeJobs(JSON.parse(savedJobs))
-  localStorage.setItem(storageKey, JSON.stringify(jobs.value))
-}
+  jobs.value = normalizeJobs(JSON.parse(savedJobs));
+  localStorage.setItem(storageKey, JSON.stringify(jobs.value));
+};
 
 onMounted(() => {
-  loadJobs()
-})
+  loadJobs();
+});
 </script>
 
 <template>
@@ -119,7 +158,7 @@ onMounted(() => {
         <p class="text-secondary mb-0">Daftar posisi yang sedang diproses.</p>
       </div>
 
-      <button class="btn btn-primary" type="button" data-bs-toggle="modal" data-bs-target="#jobModal">
+      <button class="btn btn-primary" type="button" data-bs-toggle="modal" data-bs-target="#jobModal" @click="openAddJob">
         <i class="bi bi-plus-lg me-2"></i>
         Tambah Job
       </button>
@@ -129,27 +168,17 @@ onMounted(() => {
       <div class="card-body border-bottom">
         <div class="row g-3 align-items-center">
           <div class="col-md-6 col-lg-4">
-            <label for="searchJob" class="form-label small fw-semibold text-secondary">
-              Search Jobs
-            </label>
+            <label for="searchJob" class="form-label small fw-semibold text-secondary"> Search Jobs </label>
             <div class="input-group">
               <span class="input-group-text bg-white">
                 <i class="bi bi-search"></i>
               </span>
-              <input
-                id="searchJob"
-                v-model="searchKeyword"
-                type="text"
-                class="form-control"
-                placeholder="Cari job title..."
-              />
+              <input id="searchJob" v-model="searchKeyword" type="text" class="form-control" placeholder="Cari job title..." />
             </div>
           </div>
 
           <div class="col-md-6 col-lg-3">
-            <label for="statusFilter" class="form-label small fw-semibold text-secondary">
-              Filter Status
-            </label>
+            <label for="statusFilter" class="form-label small fw-semibold text-secondary"> Filter Status </label>
             <select id="statusFilter" v-model="selectedStatus" class="form-select">
               <option value="All">All</option>
               <option value="Open">Open</option>
@@ -181,81 +210,43 @@ onMounted(() => {
                 </span>
               </td>
               <td class="text-end">
-                <button class="btn btn-light btn-sm me-2" type="button">
-                  <i class="bi bi-eye"></i>
-                </button>
-                <button class="btn btn-light btn-sm" type="button">
+                <button class="btn btn-light btn-sm" type="button" data-bs-toggle="modal" data-bs-target="#jobModal" @click="openEditJob(job)">
                   <i class="bi bi-pencil"></i>
                 </button>
               </td>
             </tr>
 
             <tr v-if="filteredJobs.length === 0">
-              <td colspan="5" class="text-center text-secondary py-4">
-                Data job tidak ditemukan.
-              </td>
+              <td colspan="5" class="text-center text-secondary py-4">Data job tidak ditemukan.</td>
             </tr>
           </tbody>
         </table>
       </div>
     </div>
 
-    <div
-      id="jobModal"
-      class="modal fade"
-      tabindex="-1"
-      aria-labelledby="jobModalLabel"
-      aria-hidden="true"
-    >
+    <div id="jobModal" class="modal fade" tabindex="-1" aria-labelledby="jobModalLabel" aria-hidden="true">
       <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content border-0 shadow">
-          <form @submit.prevent="handleAddJob">
+          <form @submit.prevent="handleSubmitJob">
             <div class="modal-header">
-              <h2 id="jobModalLabel" class="modal-title h5 fw-semibold">Add New Job</h2>
-              <button
-                ref="closeModalButton"
-                type="button"
-                class="btn-close"
-                data-bs-dismiss="modal"
-                aria-label="Close"
-              ></button>
+              <h2 id="jobModalLabel" class="modal-title h5 fw-semibold">{{ modalTitle }}</h2>
+              <button ref="closeModalButton" type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
 
             <div class="modal-body">
               <div class="mb-3">
                 <label for="jobTitle" class="form-label">Job Title</label>
-                <input
-                  id="jobTitle"
-                  v-model="form.title"
-                  type="text"
-                  class="form-control"
-                  placeholder="Contoh: Backend Developer"
-                  required
-                />
+                <input id="jobTitle" v-model="form.title" type="text" class="form-control" placeholder="Contoh: Backend Developer" required />
               </div>
 
               <div class="mb-3">
                 <label for="department" class="form-label">Department</label>
-                <input
-                  id="department"
-                  v-model="form.department"
-                  type="text"
-                  class="form-control"
-                  placeholder="Contoh: Engineering"
-                  required
-                />
+                <input id="department" v-model="form.department" type="text" class="form-control" placeholder="Contoh: Engineering" required />
               </div>
 
               <div class="mb-3">
                 <label for="location" class="form-label">Location</label>
-                <input
-                  id="location"
-                  v-model="form.location"
-                  type="text"
-                  class="form-control"
-                  placeholder="Contoh: Jakarta"
-                  required
-                />
+                <input id="location" v-model="form.location" type="text" class="form-control" placeholder="Contoh: Jakarta" required />
               </div>
 
               <div>
@@ -271,7 +262,7 @@ onMounted(() => {
               <button type="button" class="btn btn-light" data-bs-dismiss="modal">Batal</button>
               <button type="submit" class="btn btn-primary">
                 <i class="bi bi-save me-2"></i>
-                Simpan Job
+                {{ editingJobId ? "Update Job" : "Simpan Job" }}
               </button>
             </div>
           </form>
