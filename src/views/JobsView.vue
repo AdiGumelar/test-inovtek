@@ -132,6 +132,17 @@ const handleSubmitJob = () => {
   closeModal();
 };
 
+const deleteJob = (jobId) => {
+  const isConfirmed = confirm("Yakin ingin menghapus job ini?");
+
+  if (!isConfirmed) {
+    return;
+  }
+
+  jobs.value = jobs.value.filter((job) => job.id !== jobId);
+  saveJobs();
+};
+
 const loadJobs = () => {
   const savedJobs = localStorage.getItem(storageKey);
 
@@ -210,8 +221,11 @@ onMounted(() => {
                 </span>
               </td>
               <td class="text-end">
-                <button class="btn btn-light btn-sm" type="button" data-bs-toggle="modal" data-bs-target="#jobModal" @click="openEditJob(job)">
+                <button class="btn btn-light btn-sm me-2" type="button" data-bs-toggle="modal" data-bs-target="#jobModal" @click="openEditJob(job)">
                   <i class="bi bi-pencil"></i>
+                </button>
+                <button class="btn btn-outline-danger btn-sm" type="button" @click="deleteJob(job.id)">
+                  <i class="bi bi-trash"></i>
                 </button>
               </td>
             </tr>
