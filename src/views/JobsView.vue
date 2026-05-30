@@ -59,13 +59,6 @@ const getStatusBadgeClass = (status) => {
   return status === "Open" ? "text-bg-success" : "text-bg-secondary";
 };
 
-const normalizeJobs = (jobList) => {
-  return jobList.map((job) => ({
-    ...job,
-    status: job.status === "Open" ? "Open" : "Closed",
-  }));
-};
-
 const saveJobs = () => {
   localStorage.setItem(storageKey, JSON.stringify(jobs.value));
 };
@@ -152,7 +145,7 @@ const loadJobs = () => {
     return;
   }
 
-  jobs.value = normalizeJobs(JSON.parse(savedJobs));
+  jobs.value = JSON.parse(savedJobs);
   localStorage.setItem(storageKey, JSON.stringify(jobs.value));
 };
 
